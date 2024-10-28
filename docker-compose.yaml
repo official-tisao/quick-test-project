@@ -1,0 +1,40 @@
+#help me create docker compose file that will run the php-nginx image dockerfile in this project
+#services with mariadb database which will be used to store the data,
+#the database credentials should be stored in .env file for the dockerfile to use, php and mariadb should be able to communicate with each othera and share the same environment variables.
+#the database should be initialized with the schema.sql file in the project
+
+version: "3.3"
+services:
+  php-nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8080:80
+    volumes:
+      - ./:/var/www/html
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=mariadb
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    depends_on:
+      - mariadb
+  mariadb:
+    image: mariadb:latest
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    volumes:
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 2s
+      timeout: 20s
+      retries: 10
